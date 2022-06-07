@@ -1,0 +1,128 @@
+---
+title: "Gupta Lab Tool"
+runtime: shiny
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, echo=FALSE}
+Cancer_studies = c("TCGA Glioblastoma","TCGA Ovarian Cancer","TCGA Lung Adenocarcinoma","TCGA Lung Squamous Cell Carcinoma",
+                   "TCGA Prostate Cancer","TCGA Endometrioid Cancer","TCGA Bladder Cancer","TCGA Testicular Cancaer",
+                   "TCGA Esophageal Caner","TCGA Pancreatic Cancer","TCGA Kidney Papillary Cell Carcinoma","TCGA Liver Cancer",
+                   "TCGA Cervical Cancer","TCGA Sarcoma","TCGA Breast Cancer","TCGA thymoma","TCGA Mesothelioma",
+                   "TCGA Colon Cancer","TCGA Stomach Cancer","TCGA Melanoma","TCGA Bile Duct Cancer",
+                   "TCGA Kidney Clear Cell Carcinoma","TCGA Formalin Fixed Paraffin-Embedded Pilot Phase II",
+                   "TCGA Thyroid Cancer","TCGA Head and Neck Cancer","TCGA Acute Myeloid Leukemia","TCGA Rectal Cancer",
+                   "TCGA Lower Grade Glioma","TCGA Large B-cell Lymphoma","TCGA Kidney Chromophobe","TCGA Uterine Carcinosarcoma",
+                   "TCGA Adrenocortical Cancer","TCGA Pheochromocytoma & Paraganglioma","TCGA Ocular melanomas")
+Cancer_studies = sort(Cancer_studies);
+T = read.table("GeneList.txt",sep="\t");
+Gene_List = T$V1;
+GraphHeight = "600px";
+GraphWidth = "100%";
+#shinyUI(fluidPage(
+  #titlePanel("Gupta Lab"),
+#  fluidRow(
+  sidebarLayout(
+    sidebarPanel(
+      width = "3",
+      selectInput(inputId = "StudyType",label = "Cancer Study:",choices = c("Select one:"="","One Study","Multiple Studies")
+      ),  
+        selectInput(inputId = "Genes",label = "Gene of Interest:",choices = as.character(Gene_List),multiple = TRUE
+                    #list(`E` = list("V","B","N"),`H` = list("A","S","D")),
+        ),
+      conditionalPanel(condition = "input.StudyType == 'One Study' && input.Genes.length > 0",
+                       selectInput(inputId = "Cancerstudy",label = "Select Study:",choices = c("Select one: " = "",Cancer_studies))),
+      conditionalPanel(condition = "input.StudyType == 'Multiple Studies' && input.Genes.length != 0",
+                       selectInput(inputId = "M_Cancerstudy",label = "Select Study:",choices = c("Select any: " = "",Cancer_studies),multiple = TRUE)),
+      selectInput(inputId = "Output_opt",
+                  label = "Analysis:",
+                  choices = c("Select one: " = "","Heatmap","Boxplot","Survival")),
+      
+      #### HEAT ####
+      conditionalPanel(
+        condition = "input.Output_opt == 'Heatmap' && input.Genes.length > 1",
+        selectInput(inputId = "HeatType",
+                    label = "Heatmap for:",
+                    choices = c("Select one: " = "",
+                                "Normal Vs Tumor",
+                                "Pharmaceutical Therapy",
+                                "Radiation Treatment")
+        ),
+        conditionalPanel(condition = "input.HeatType == 'Radiation Treatment' || input.HeatType == 'Pharmaceutical Therapy'",
+                         selectInput(inputId = "ZScore", label = "Z-Score",choices = c(0.5,1,1.5,2),selected = 1))
+      ),
+      
+      #### BOX #####
+      conditionalPanel(
+        condition = "input.Output_opt == 'Boxplot'",
+      selectInput(inputId = "BoxType",
+                  label = "Boxplot for:",
+                  choices = c("Select one: " = "",
+                              "Age",
+                              "AJCC Cancer Stage",
+                              "DFS Status",
+                              "Metastasis Stage",
+                              "Neoadjuvent",
+                              "Nodal Stage",
+                              "Normal vs Tumor",
+                              #"Pathological Tumor Stage",
+                              "Pharmaceutical Therapy",
+                              "Race",
+                              "Radiation Treatment",
+                              "Sex",
+                              "Normal Samples",
+                              "Tumor Samples")
+                   )  
+      ),
+      
+      #### SURVIVAL ####
+      conditionalPanel(
+        condition = "input.Output_opt == 'Survival'",
+        selectInput(inputId = "SurvType",
+                    label = "Survival wrt:",
+                    choices = c("Select one: " = "",
+                                "Age",
+                                "Expression",
+                                "Pharmaceutical Therapy",
+                                "Race",
+                                "Radiation Treatment",
+                                "Sex")
+        ),
+        conditionalPanel(condition = "input.SurvType == 'Expression'",
+                          selectInput(inputId = "Z_Score", label = "Z-Score",choices = c(0.5,1,1.5,2),selected = 1)),
+        selectInput(inputId = "SurvivalTime", 
+                    label = "Survival Time",
+                    choices = c("Median Survival","Time of your choice"),
+                    selected = "Median Survival"),
+        conditionalPanel(condition="input.SurvivalTime == 'Time of your choice'",
+                         sliderInput(inputId = "Time", label = "Time (in Days): ", min = 1,max = 100,value = 50,step = 2))
+      )
+      #,
+      #####
+      #actionButton("goButton","Analyze!")
+    ),
+    mainPanel(
+      width = "9",
+      uiOutput("myTabs"),
+      #### HEAT OUT ####
+      conditionalPanel(condition = "input.Output_opt=='Heatmap' && (input.Cancerstudy != '' || input.M_Cancerstudy != '' ) && input.Genes.length > 1",
+                       conditionalPanel(condition = "input.HeatType == 'Pharmaceutical Therapy'",plotOutput("HeatPT", width = GraphWidth, height = GraphHeight)),
+                       conditionalPanel(condition = "input.HeatType == 'Radiation Treatment'",plotOutput("HeatRT", width = GraphWidth, height = GraphHeight)),
+                       conditionalPanel(condition = "input.HeatType == 'Normal Vs Tumor'",plotOutput("HeatNT" , width = GraphWidth, height = GraphHeight))
+      ),
+      conditionalPanel(condition = "input.Output_opt=='Heatmap' && (input.Cancerstudy != '' || input.M_Cancerstudy != '' ) && input.Genes.length <= 1",
+                       textOutput("HeatText")
+      )
+     
+      #### BOX OUT ####
+      
+    )
+  )
+ # )
+#)
+#)
+```
+
